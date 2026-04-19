@@ -228,30 +228,61 @@
   const vcBars = document.querySelectorAll('.vc-bar');
   vcBars.forEach(function (el) { barObserver.observe(el); });
 
-  /* ---- CONTACT FORM (client-side simulation) ---- */
+  /* ---- CONTACT FORM ---- */
   const contactForm = document.getElementById('contactForm');
   if (contactForm) {
-    contactForm.addEventListener('submit', function (e) {
+    contactForm.addEventListener('submit', async function (e) {
       e.preventDefault();
 
       const btn = this.querySelector('button[type="submit"]');
       const originalText = btn.textContent;
-
       btn.textContent = 'Sending…';
       btn.disabled = true;
 
-      // Simulate async submit (replace with real endpoint)
-      setTimeout(function () {
-        btn.textContent = 'Message Sent!';
-        btn.style.background = '#1a7a4a';
-        contactForm.reset();
+      const data = {
+        firstName:   document.getElementById('firstName').value.trim(),
+        lastName:    document.getElementById('lastName').value.trim(),
+        email:       document.getElementById('email').value.trim(),
+        company:     document.getElementById('company').value.trim(),
+        inquiryType: document.getElementById('inquiryType').value,
+        message:     document.getElementById('message').value.trim(),
+      };
 
+      try {
+        const res = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const result = await res.json();
+
+        if (res.ok && result.success) {
+          btn.textContent = 'Message Sent!';
+          btn.style.background = '#1a7a4a';
+          contactForm.reset();
+          setTimeout(function () {
+            btn.textContent = originalText;
+            btn.style.background = '';
+            btn.disabled = false;
+          }, 4000);
+        } else {
+          btn.textContent = 'Error — please try again';
+          btn.style.background = '#b91c1c';
+          btn.disabled = false;
+          setTimeout(function () {
+            btn.textContent = originalText;
+            btn.style.background = '';
+          }, 4000);
+        }
+      } catch {
+        btn.textContent = 'Network error — please try again';
+        btn.style.background = '#b91c1c';
+        btn.disabled = false;
         setTimeout(function () {
           btn.textContent = originalText;
           btn.style.background = '';
-          btn.disabled = false;
         }, 4000);
-      }, 1200);
+      }
     });
   }
 
