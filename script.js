@@ -1,5 +1,6 @@
 /* ============================================
    HENRY INTERNATIONAL — Main JavaScript
+   Redesign: Minimal holding company site
    ============================================ */
 
 (function () {
@@ -7,11 +8,9 @@
 
   /* ---- STICKY HEADER SHADOW ---- */
   const header = document.getElementById('siteHeader');
-  const announcementBar = document.getElementById('announcementBar');
 
   function handleScroll() {
-    const scrolled = window.scrollY > 10;
-    header.classList.toggle('scrolled', scrolled);
+    header.classList.toggle('scrolled', window.scrollY > 10);
   }
   window.addEventListener('scroll', handleScroll, { passive: true });
   handleScroll();
@@ -26,7 +25,6 @@
     document.body.style.overflow = isOpen ? 'hidden' : '';
   });
 
-  // Close mobile nav on outside click
   document.addEventListener('click', function (e) {
     if (
       navLinks.classList.contains('open') &&
@@ -38,21 +36,6 @@
     }
   });
 
-  // Mobile dropdown accordion
-  if (window.innerWidth <= 768) {
-    document.querySelectorAll('.has-dropdown > .nav-link').forEach(function (link) {
-      link.addEventListener('click', function (e) {
-        e.preventDefault();
-        const parent = this.closest('.nav-item');
-        const wasOpen = parent.classList.contains('open');
-        document.querySelectorAll('.nav-item.open').forEach(function (item) {
-          item.classList.remove('open');
-        });
-        if (!wasOpen) parent.classList.add('open');
-      });
-    });
-  }
-
   /* ---- SMOOTH SCROLL FOR ANCHOR LINKS ---- */
   document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
     anchor.addEventListener('click', function (e) {
@@ -62,15 +45,10 @@
       if (!target) return;
       e.preventDefault();
 
-      // Close mobile nav if open
       navLinks.classList.remove('open');
       document.body.style.overflow = '';
 
-      const headerHeight = header.offsetHeight +
-        (announcementBar && announcementBar.style.display !== 'none'
-          ? announcementBar.offsetHeight
-          : 0);
-
+      const headerHeight = header.offsetHeight;
       window.scrollTo({
         top: target.getBoundingClientRect().top + window.scrollY - headerHeight - 16,
         behavior: 'smooth'
@@ -78,72 +56,8 @@
     });
   });
 
-  /* ---- PORTFOLIO TABS ---- */
-  const portfolioTabs = document.getElementById('portfolioTabs');
-  const portfolioCards = document.querySelectorAll('.portfolio-card');
-
-  if (portfolioTabs) {
-    portfolioTabs.addEventListener('click', function (e) {
-      const btn = e.target.closest('.tab-btn');
-      if (!btn) return;
-
-      // Update active tab
-      portfolioTabs.querySelectorAll('.tab-btn').forEach(function (b) {
-        b.classList.remove('active');
-      });
-      btn.classList.add('active');
-
-      const filter = btn.dataset.tab;
-
-      portfolioCards.forEach(function (card) {
-        if (filter === 'all') {
-          card.style.display = '';
-          setTimeout(function () { card.style.opacity = '1'; card.style.transform = ''; }, 0);
-        } else {
-          const status = card.dataset.status;
-          const match = (
-            (filter === 'active'   && status === 'active') ||
-            (filter === 'building' && status === 'building') ||
-            (filter === 'pipeline' && status === 'pipeline')
-          );
-          if (match) {
-            card.style.display = '';
-            setTimeout(function () { card.style.opacity = '1'; card.style.transform = ''; }, 0);
-          } else {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(8px)';
-            setTimeout(function () { card.style.display = 'none'; }, 220);
-          }
-        }
-      });
-    });
-  }
-
-  /* ---- SERVICES TOGGLE ---- */
-  const servicesToggle = document.getElementById('servicesToggle');
-  const servicesPanes = document.querySelectorAll('.services-pane');
-
-  if (servicesToggle) {
-    servicesToggle.addEventListener('click', function (e) {
-      const btn = e.target.closest('.stoggle-btn');
-      if (!btn) return;
-
-      servicesToggle.querySelectorAll('.stoggle-btn').forEach(function (b) {
-        b.classList.remove('active');
-      });
-      btn.classList.add('active');
-
-      const target = btn.dataset.pane;
-      servicesPanes.forEach(function (pane) {
-        pane.classList.toggle('active', pane.id === 'pane-' + target);
-      });
-    });
-  }
-
   /* ---- INTERSECTION OBSERVER: FADE IN UP ---- */
-  const fadeTargets = document.querySelectorAll(
-    '.portfolio-card, .service-card, .insight-card, .roadmap-phase, .pillar, .value-item'
-  );
+  const fadeTargets = document.querySelectorAll('.portfolio-card, .about-visual-block, .contact-form-wrap');
 
   const observer = new IntersectionObserver(
     function (entries) {
@@ -164,22 +78,15 @@
   });
 
   /* ---- ANIMATED COUNTER (stats in hero) ---- */
-  function animateCounter(el, target, suffix) {
-    const duration = 1600;
+  function animateCounter(el, target) {
+    const duration = 1200;
     const start = performance.now();
-    const isNum = !isNaN(parseInt(target));
+    const num = parseInt(target);
 
     function update(time) {
-      const elapsed = time - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const ease = 1 - Math.pow(1 - progress, 3); // ease-out-cubic
-
-      if (isNum) {
-        el.textContent = Math.round(parseInt(target) * ease) + (suffix || '');
-      } else {
-        if (progress >= 1) el.textContent = target;
-      }
-
+      const progress = Math.min((time - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(num * ease);
       if (progress < 1) requestAnimationFrame(update);
     }
     requestAnimationFrame(update);
@@ -189,13 +96,9 @@
     function (entries) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
-          const numbers = entry.target.querySelectorAll('.stat-number');
-          numbers.forEach(function (el) {
+          entry.target.querySelectorAll('.stat-number').forEach(function (el) {
             const raw = el.textContent.trim();
-            const numMatch = raw.match(/^(\d+)(%?)$/);
-            if (numMatch) {
-              animateCounter(el, numMatch[1], numMatch[2]);
-            }
+            if (/^\d+$/.test(raw)) animateCounter(el, raw);
           });
           statsObserver.unobserve(entry.target);
         }
@@ -206,27 +109,6 @@
 
   const heroStats = document.querySelector('.hero-stats');
   if (heroStats) statsObserver.observe(heroStats);
-
-  /* ---- PROGRESS BAR ANIMATION ---- */
-  const barObserver = new IntersectionObserver(
-    function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          const fill = entry.target.querySelector('.vc-bar-fill');
-          if (fill) {
-            const target = fill.style.width;
-            fill.style.width = '0';
-            setTimeout(function () { fill.style.width = target; }, 200);
-          }
-          barObserver.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.5 }
-  );
-
-  const vcBars = document.querySelectorAll('.vc-bar');
-  vcBars.forEach(function (el) { barObserver.observe(el); });
 
   /* ---- CONTACT FORM ---- */
   const contactForm = document.getElementById('contactForm');
@@ -240,12 +122,10 @@
       btn.disabled = true;
 
       const data = {
-        firstName:   document.getElementById('firstName').value.trim(),
-        lastName:    document.getElementById('lastName').value.trim(),
-        email:       document.getElementById('email').value.trim(),
-        company:     document.getElementById('company').value.trim(),
-        inquiryType: document.getElementById('inquiryType').value,
-        message:     document.getElementById('message').value.trim(),
+        firstName: document.getElementById('firstName').value.trim(),
+        lastName:  document.getElementById('lastName').value.trim(),
+        email:     document.getElementById('email').value.trim(),
+        message:   document.getElementById('message').value.trim(),
       };
 
       try {
@@ -293,21 +173,16 @@
   function updateActiveNav() {
     const scrollPos = window.scrollY + 120;
     let current = '';
-
     sections.forEach(function (section) {
-      if (section.offsetTop <= scrollPos) {
-        current = '#' + section.id;
-      }
+      if (section.offsetTop <= scrollPos) current = '#' + section.id;
     });
-
     navAnchors.forEach(function (a) {
       a.classList.toggle('nav-link-active', a.getAttribute('href') === current);
     });
   }
-
   window.addEventListener('scroll', updateActiveNav, { passive: true });
 
-  /* ---- RESIZE: RE-INIT DROPDOWNS ---- */
+  /* ---- RESIZE: CLOSE MOBILE NAV ---- */
   window.addEventListener('resize', function () {
     if (window.innerWidth > 768) {
       navLinks.classList.remove('open');
