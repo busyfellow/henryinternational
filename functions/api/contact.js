@@ -4,7 +4,7 @@ export async function onRequestPost({ request, env }) {
     try { body = await request.json(); }
     catch { return json({ success: false, error: 'Invalid request body' }, 400); }
 
-    const { firstName, lastName, email, company, inquiryType, message } = body;
+    const { firstName, lastName, email, message } = body;
     if (!firstName || !lastName || !email)
       return json({ success: false, error: 'Missing required fields' }, 400);
 
@@ -15,12 +15,8 @@ export async function onRequestPost({ request, env }) {
             <td>${esc(firstName)} ${esc(lastName)}</td></tr>
         <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Email</td>
             <td>${esc(email)}</td></tr>
-        <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Company</td>
-            <td>${esc(company || '\u2014')}</td></tr>
-        <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Interest</td>
-            <td>${esc(inquiryType || '\u2014')}</td></tr>
         <tr><td style="padding:4px 12px 4px 0;font-weight:bold">Message</td>
-            <td style="white-space:pre-wrap">${esc(message || '\u2014')}</td></tr>
+            <td style="white-space:pre-wrap">${esc(message || '—')}</td></tr>
       </table>`;
 
     const res = await fetch('https://api.resend.com/emails', {
@@ -31,9 +27,9 @@ export async function onRequestPost({ request, env }) {
       },
       body: JSON.stringify({
         from: 'website@henry-intl.com',
-        to: ['hello@henry-intl.com'],
+        to: ['info@henry-intl.com'],
         reply_to: email,
-        subject: `New enquiry from ${firstName} ${lastName} \u2014 Henry International`,
+        subject: `New enquiry from ${firstName} ${lastName} — Henry International`,
         html,
       }),
     });
